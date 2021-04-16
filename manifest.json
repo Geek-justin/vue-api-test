@@ -1,12 +1,26 @@
 {
-    "name": "Api Test",
-    "manifest_version": 2,
-    "version": "0.0.1",
-    "description": "",
-    "icons":{
-		"16": "images/icon_16.png",
-		"48": "images/icon_48.png",
-		"128": "images/icon_128.png"
-	},
-    "options_page": "pages/options.html"
+  "name": "Api Test",
+  "manifest_version": 2,
+  "version": "0.0.1",
+  "description": "",
+  "icons": {
+    "16": "images/icon_16.png",
+    "48": "images/icon_48.png",
+    "128": "images/icon_128.png"
+  },
+  "browser_action": {
+    "default_icon": "images/icon_20.png",
+    "default_title": "Api Test",
+    "default_popup": "popup/index.html"
+  },
+  "options_ui": {
+    "page": "option/index.html",
+    "open_in_tab": true
+  },
+  "background": {
+    "persistent": true,
+    "scripts": ["background/index.js"]
+  },
+  "permissions": ["tabs"],
+  "content_security_policy": "style-src 'self' 'unsafe-inline';script-src 'self' 'unsafe-eval'; object-src 'self' ; media-src 'self' filesystem:"
 }
