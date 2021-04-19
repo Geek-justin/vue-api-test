@@ -1,1 +1,32 @@
 html, body { padding: 0; margin: 0 }
+#wrapper { height: 100vh }
+.el-select .el-input { width: 130px; }
+
+.request-area {
+    height: 100vh;
+}
+.response-area {
+    height: calc(100vh - 40px);
+}
+
+.json-viewer {
+    font-size: 16px;
+    line-height: 24px;;
+    font-family: Tahoma, Geneva, Verdana, sans-serif;
+}
+.json-viewer .json-viewer-control {
+    padding: 5px 10px;
+}
+.json-viewer .value-line:hover { 
+    background-color: #eee;
+}
+.json-viewer .object-line:hover > .char-bracket { 
+    color: red;
+}
+.json-viewer .json-node { border-left: 1px dotted #ccc; padding-left: 20px; }
+.json-viewer .node-key { color: #f63}
+.json-viewer .node-value { color: #333}
+.json-viewer .char-quotes { color: blue }
+.json-viewer .char-colon { color: #55F; margin: 0 3px; }
+.json-viewer .char-dot { color: #55F; margin: 0 3px; }
+.json-viewer .char-bracket {  }
