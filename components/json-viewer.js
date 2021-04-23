@@ -1,142 +1,187 @@
 const JsonViewer = (function () {
-  function getKind(value) {
-    let kind = typeof value
-    if (kind == 'object' && value instanceof Array) {
-      kind = 'array'
-    }
-    return kind
-  }
-  function getValue(kind, value) {
-    if (kind == 'object') {
-      return getObject(value)
-    } else if (kind == 'array') {
-      return getArray(value)
-    } else {
-      return value.toString()
-    }
-  }
-
-  function getArray(_array) {
-    let _expand = []
-    if (_array.length > 0) {
-      _array.forEach((each, i) => {
-        _expand.push({
-          name: '',
-          kind: getKind(each),
-          value: each
-        })
-      })
-    }
-    return _expand
-  }
-
-  function getObject(_object) {
-    let _expand = []
-    for (k in _object) {
-      _expand.push({
-        name: k,
-        kind: getKind(_object[k]),
-        value: _object[k],
-      })
-    }
-    return _expand
-  }
-
   JsonNode = {
     name: 'JsonNode',
     template: `
-<div class="json-node">
-  <span v-if="!isEmpty">
-    <span class="char-quotes">"</span>
-    <span class="node-key">{{ dataSource.name }}</span>
-    <span class="char-quotes">"</span>
-    <span class="char-colon">:</span>
-  </span>
-  <span v-if="isObject" class="char-bracket">{</span><span v-else-if="isArray" class="char-bracket">[</span><span v-else class="char-quotes">"</span>
-  <json-node v-if="hasChildren" v-for="child in value" :dataSource="child"></json-node><span v-else class="node-value">{{ value }}</span>
-  <span v-if="isObject" class="char-bracket">}</span><span v-else-if="isArray" class="char-bracket">]</span><span v-else class="char-quotes">"</span>
-  <span v-if="!isRoot" class="char-dot">,</span>
-</div>    
+<div :class="root ? 'json-root' : 'json-node'">
+    <span v-if="state.hasChildren" class="node-ctrl">
+      <span v-if="state.nodeOpen" @click="state.nodeOpen = false">-</span>
+      <span v-else @click="state.nodeOpen = true">+</span>
+    </span>
+    <span v-if="name != ''">
+      <span class="node-quotes">"</span>
+      <span class="node-key">{{ name }}</span>
+      <span class="node-quotes">"</span>
+      <span class="node-colon">:</span>
+    </span>
+    <span v-if="state.hasChildren">
+      <span v-if="kind == 'array'" class="node-bracket">[</span>
+      <span v-else class="node-bracket">{</span>
+    </span>
+
+    <template v-if="state.hasChildren">
+      <div class="node-children" v-if="state.nodeOpen">
+        <json-node
+          v-for="(item, index) in state.children"
+          :key="index"
+          :name="item.name"
+          :kind="item.kind"
+          :value="item.value"
+        ></json-node>
+      </div>
+      <div v-else class="node-placeholder" @click="state.nodeOpen = true">...</div>
+    </template>
+    <template v-else>
+      <template v-if="typeof value == 'string'">
+        <span class="node-quotes">"</span>
+        <span class="node-value">{{ value }}</span>
+        <span class="node-quotes">"</span>
+      </template>
+      <template v-else-if="typeof value == 'boolean'">
+        <span class="node-value" style="color: red; font-weight: bold">{{ value }}</span>
+      </template>
+      <template v-else>
+        <span class="node-value" style="color: blue">{{ value }}</span>
+      </template>
+    </template>
+
+    <span v-if="state.hasChildren">
+      <span v-if="kind == 'array'" class="node-bracket">]</span>
+      <span v-else class="node-bracket">}</span>
+      <span v-if="!state.nodeOpen" class="node-remark">// {{ state.children.length }} nodes</span>
+    </span>
+
+    <span v-if="!root">,</span>
+  </div>
     `,
     props: {
-      dataSource: {
-        type: Object,
+      root: {
+        type: Boolean,
+        default: false,
       },
-      isRoot: Boolean,
+      name: {
+        type: String,
+        default: '',
+      },
+      kind: {
+        type: String,
+        default: 'object',
+      },
+      value: {
+        type: [Array, Object, Number, String, Boolean],
+        require: true,
+      },
     },
-    data() {
-      let _object = Vue.toRaw(this.dataSource)
-      console.log(getValue(_object.kind, _object.value))
-      return {
-        isEmpty: _object.name == '',
-        isObject: _object.kind == 'object',
-        isArray: _object.kind == 'array',
-        hasChildren: _object.kind == 'object' || _object.kind == 'array',
-        value: getValue(_object.kind, _object.value),
+    setup(props) {
+      const state = Vue.reactive({
+        nodeValue: Vue.toRaw(props.value),
+        hasChildren: false,
+        nodeOpen: true,
+        children: [],
+      })
+
+      function getKind(_value) {
+        let _kind = typeof _value
+        if (_kind == 'object' && _value instanceof Array) {
+          _kind = 'array'
+        }
+        return _kind
       }
-    },
-    watch: {
-      dataSource(_object) {
-        this.isEmpty = _object.name == ''
-        this.isObject = _object.kind == 'object'
-        this.isArray = _object.kind == 'array'
-        this.hasChildren = this.isObject || this.isArray
-        this.value = getValue(_object.kind, _object.value)
-      },
+      function parseChild(value) {
+        let children = []
+        if (typeof value == 'object') {
+          state.hasChildren = true
+          let flag = value instanceof Array
+          for (let k in value) {
+            let _value = value[k]
+            let child = {
+              name: flag ? '' : k,
+              kind: getKind(_value),
+              value: _value,
+            }
+            children.push(child)
+          }
+        } else {
+          state.hasChildren = false
+        }
+        state.children = children
+      }
+      Vue.watch(
+        () => props.value,
+        (_new, _old) => {
+          state.nodeValue = _new
+        }
+      )
+      Vue.watchEffect(() => {
+        parseChild(state.nodeValue)
+      })
+      return {
+        state,
+      }
     },
   }
 
   const _page = {
     name: 'JsonViewer',
-    template: `<div class="json-viewer">
-<div class="json-viewer-control">
-  <el-radio-group v-model="viewType">
-    <el-radio label="raw">原始数据</el-radio>
-    <el-radio label="json">JSON</el-radio>
-  </el-radio-group>
+    template: `
+<div class="json-viewer">
+  <el-tabs type="border-card" v-model="state.viewType">
+    <el-tab-pane name="json" label="Json" class="tab-content">
+      <json-node :root="true" :kind="state.jsonKind" :value="state.jsonObject"></json-node>
+    </el-tab-pane>
+    <el-tab-pane name="raw" label="Raw">
+      <el-input
+        type="textarea"
+        v-model="state.inputContent"
+        placeholder="请输入JSON文本"
+        :autosize="{ minRows: 20 }"
+      />
+    </el-tab-pane>
+  </el-tabs>
 </div>
-<json-node v-if="showJsonViewer" :dataSource="jsonSource" :isRoot="true"></json-node>
-<el-input v-else
-  type="textarea"
-  :autosize="{minRows: 30}"
-  placeholder="请输入内容"
-  v-model="inputContent">
-</el-input>
-
-</div>`,
+`,
+    components: { JsonNode },
     props: {
-      jsonContent: {
+      content: {
         type: String,
-        default: '',
+        default: '{}',
       },
     },
-    components: {
-      JsonNode,
-    },
-    data() {
-      return {
+    setup(props) {
+      const state = Vue.reactive({
+        inputContent: props.content,
+        jsonObject: {},
+        jsonKind: 'object',
         viewType: 'json',
-        inputContent: this.jsonContent,
-      }
-    },
-    computed: {
-      showJsonViewer() {
-        return this.viewType == 'json'
-      },
-      jsonSource() {
-        let _value = JSON.parse(this.inputContent)
-        let _kind = getKind(_value)
-        return {
-          name: '',
-          kind: _kind,
-          value: _value,
+      })
+
+      function parseInput(_input) {
+        try {
+          let _value = JSON.parse(_input)
+          state.jsonObject = _value
+          let kind = typeof _value
+          if (kind == 'object' && _value instanceof Array) {
+            kind = 'array'
+          }
+          state.jsonKind = kind
+        } catch (error) {
+          console.log(error.message)
         }
-      },
-    },
-    watch: {
-      jsonContent(content) {
-        this.inputContent = content
-      },
+      }
+
+      Vue.watch(
+        () => props.content,
+        (_new, _old) => {
+          state.inputContent = _new
+        }
+      )
+
+      Vue.watchEffect(() => {
+        parseInput(Vue.toRaw(state.inputContent))
+      })
+
+      return {
+        state,
+      }
     },
   }
 

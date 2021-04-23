@@ -12,14 +12,16 @@
 
 <body>
     <div id="wrapper">
-        <api-test />
+        <api-request :api='{"url":"https://movie.douban.com/j/search_subjects?type=movie&tag=%E6%9C%80%E6%96%B0&page_limit=100&page_start=0"}' />
     </div>
 
     <script src="../../libs/vue/vue.min.js"></script>
     <script src="../../libs/axios/axios.min.js"></script>
     <script src="../../libs/element-plus/index.full.js"></script>
+
     <script src="../../components/json-viewer.js"></script>
-    <script src="../../components/api-test.js"></script>
+    <script src="../../components/request-params.js"></script>
+    <script src="../../components/api-request.js"></script>
     <script src="./index.js"></script>
 </body>
 

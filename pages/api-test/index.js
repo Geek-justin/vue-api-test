@@ -1,6 +1,6 @@
 const App = {
   components: {
-    ApiTest,
+    ApiRequest,
     JsonViewer,
   },
 }

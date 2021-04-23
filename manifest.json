@@ -21,6 +21,9 @@
     "persistent": true,
     "scripts": ["background/index.js"]
   },
-  "permissions": ["tabs"],
+  "permissions": [
+    "tabs",
+    "<all_urls>"
+  ],
   "content_security_policy": "style-src 'self' 'unsafe-inline';script-src 'self' 'unsafe-eval'; object-src 'self' ; media-src 'self' filesystem:"
 }

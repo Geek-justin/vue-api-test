@@ -1,32 +1,134 @@
-html, body { padding: 0; margin: 0 }
-#wrapper { height: 100vh }
-.el-select .el-input { width: 130px; }
-
-.request-area {
-    height: 100vh;
+html,
+body {
+  padding: 0;
+  margin: 0;
 }
-.response-area {
-    height: calc(100vh - 40px);
+#wrapper {
+  height: 100vh;
+  font-size: 14px;
 }
-
-.json-viewer {
-    font-size: 16px;
-    line-height: 24px;;
-    font-family: Tahoma, Geneva, Verdana, sans-serif;
+.el-button--mini {
+  padding: 5px 10px;
 }
-.json-viewer .json-viewer-control {
-    padding: 5px 10px;
+.info-section {
+  padding-bottom: 10px;
 }
-.json-viewer .value-line:hover { 
-    background-color: #eee;
+.info-section .el-col {
+  padding: 0 10px;
 }
-.json-viewer .object-line:hover > .char-bracket { 
-    color: red;
+.func-section {
+  height: calc(100% - 115px);
 }
-.json-viewer .json-node { border-left: 1px dotted #ccc; padding-left: 20px; }
-.json-viewer .node-key { color: #f63}
-.json-viewer .node-value { color: #333}
-.json-viewer .char-quotes { color: blue }
-.json-viewer .char-colon { color: #55F; margin: 0 3px; }
-.json-viewer .char-dot { color: #55F; margin: 0 3px; }
-.json-viewer .char-bracket {  }
+.func-section .el-col {
+  padding: 0 10px;
+}
+.request-params, .json-viewer {
+  height: 100%;
+  position: relative;
+}
+#wrapper .el-tabs--border-card {
+  height: calc(100% - 10px);
+}
+#wrapper .el-tabs--border-card > .el-tabs__content {
+  padding: 5px;
+  width: calc(100% - 10px);
+  height: calc(100% - 60px);
+  overflow-y: auto;
+  position: absolute;
+}
+.json-root {
+  position: relative;
+  padding-left: 20px;
+}
+.json-node {
+  position: relative;
+  padding-left: 20px;
+  border-left: 1px dotted #ccc;
+}
+.node-ctrl {
+  position: absolute;
+  left: 6px;
+  color: #999;
+  cursor: pointer;
+}
+.node-placeholder {
+  color: #ccc;
+  padding: 0 3px;
+  display: inline;
+}
+.node-remark {
+  color: #ccc;
+  margin-left: 10px;
+}
+.json-node .node-key {
+  color: #933;
+}
+.json-node .node-value {
+  color: #333;
+}
+.json-node .node-bracket {
+  color: #963;
+}
+.json-node .node-dot {
+  color: #ccc;
+}
+.json-node .node-quotes {
+  color: #963;
+}
+.json-node .node-colon {
+  color: #333;
+  padding: 0 2px;
+}
+.params-list {
+  font-size: 14px;
+  border: 1px solid #ccc;
+}
+.param-item {
+  border-bottom: 1px solid #ccc;
+  height: 33px;
+  position: relative;
+}
+.param-item:last-child {
+  border-bottom: none;
+}
+.header > .param-key,
+.param-value {
+  padding-left: 10px;
+  line-height: 30px;
+}
+.param-item > div {
+  border-left: 1px solid #ccc;
+  height: 29px;
+  padding: 2px;
+  line-height: 28px;
+}
+.param-item > div:first-child {
+  border-left: none;
+}
+.param-item .param-ctrl {
+  float: left;
+  width: 35px;
+  text-align: center;
+}
+.param-item .param-key {
+  float: left;
+  width: 120px;
+}
+.param-item .param-value {
+  margin-left: 165px;
+  width: calc(100% - 210px);
+}
+.param-item .param-operate {
+  position: absolute;
+  right: 10px;
+  top: 0;
+  width: 25px;
+}
+.param-item .param-operate .el-button {
+  color: #f00;
+  display: none;
+  text-align: center;
+}
+.param-item:hover .el-button {
+  display: block;
+}
