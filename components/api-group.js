@@ -35,9 +35,7 @@ const ApiGroup = (function () {
       Vue.watch(
         () => props.active,
         (_new, _old) => {
-          setTimeout(function () {
-            state.ActiveTab = _new
-          }, 100)
+          state.ActiveTab = _new
         }
       )
       function refreshActiveTab(tabIndex) {

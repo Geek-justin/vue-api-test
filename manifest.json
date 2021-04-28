@@ -1,7 +1,7 @@
 {
   "name": "Api Test",
   "manifest_version": 2,
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "",
   "icons": {
     "16": "images/icon_16.png",

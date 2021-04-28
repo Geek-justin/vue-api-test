@@ -192,7 +192,7 @@ const ApiRequest = (function () {
         state.nameEditMode = true
         setTimeout(function () {
           inputElement.value.focus()
-        }, 500)
+        }, 300)
       }
       function saveName() {
         state.nameEditMode = false

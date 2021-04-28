@@ -200,11 +200,11 @@ const ApiTest = (function () {
       }
       function handleActiveApi(payload) {
         state.active = `${payload}`
-        console.log(`Curr ${state.active}`)
       }
       function handleAddApi(_object, parents) {
         let _api = Vue.toRaw(_object)
-        if (state.openedList.indexOf(_api.id) == -1) {
+        let pos = state.openedList.indexOf(_api.id)
+        if (pos == -1) {
           state.apis.push({
             ref: _object,
             name: _api.label,
@@ -217,6 +217,8 @@ const ApiTest = (function () {
           }
           state.active = `${last}`
           state.openedList.push(_api.id)
+        } else {
+          state.active = `${pos}`
         }
       }
       function handleRemoveApi(payload) {
