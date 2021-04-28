@@ -1,7 +1,7 @@
 const App = {
   components: {
-    ApiRequest,
-    JsonViewer,
+    ApiTest,
+    ApiGroup
   },
 }
 

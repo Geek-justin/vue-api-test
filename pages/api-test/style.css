@@ -7,9 +7,88 @@ body {
   height: 100vh;
   font-size: 14px;
 }
+#wrapper > .el-row {
+  height: 100%;
+}
+#wrapper > .el-row > .el-col {
+  padding: 5px;
+}
+
 .el-button--mini {
   padding: 5px 10px;
 }
+.el-input__inner {
+  padding: 0 5px;
+}
+.el-tabs__new-tab {
+  margin-right: 15px;
+  background-color: #409eff;
+  color: #666;
+  padding: 5px;
+  margin-top: 2px;
+  font-size: 24px;
+  line-height: 24px;
+  height: 24px;
+  width: 24px;
+  font-weight: bolder;
+}
+.el-tabs__new-tab:hover {
+  color: #000;
+}
+.el-tabs--card > .el-tabs__header .el-tabs__item.is-closable .el-icon-close {
+  width: 14px;
+}
+.el-tabs--card > .el-tabs__header .el-tabs__item.is-closable {
+  padding-left: 13px;
+  padding-right: 13px;
+}
+#wrapper .el-tabs {
+  height: 100%;
+}
+#wrapper .el-tabs > .el-tabs__content {
+  height: calc(100% - 56px);
+}
+#wrapper .el-tabs > .el-tabs__content > .el-tab-pane {
+  height: 100%;
+}
+.custom-tree-node {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+    padding-right: 8px;
+}
+.custom-tree-node .context-menu {
+  display: none;
+}
+.custom-tree-node:hover .context-menu {
+  display: flex;
+}
+
+.title-section {
+  padding: 0 10px 10px;
+}
+.title-section .el-col:first-child {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.title-section .el-col:last-child {
+  padding-left: 10px;
+}
+.title-section .el-breadcrumb .el-button {
+  display: none;
+  margin-left: 5px;
+}
+.title-section .el-breadcrumb {
+  height: 40px;
+  line-height: 40px;
+  margin-left: 5px;
+}
+.title-section .el-breadcrumb:hover .el-button {
+  display: inline;
+}
+
 .info-section {
   padding-bottom: 10px;
 }
@@ -22,7 +101,8 @@ body {
 .func-section .el-col {
   padding: 0 10px;
 }
-.request-params, .json-viewer {
+.request-params,
+.json-viewer {
   height: 100%;
   position: relative;
 }

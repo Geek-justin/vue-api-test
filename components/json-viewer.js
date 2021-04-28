@@ -133,7 +133,7 @@ const JsonViewer = (function () {
         type="textarea"
         v-model="state.inputContent"
         placeholder="请输入JSON文本"
-        :autosize="{ minRows: 20 }"
+        :autosize="{ minRows: 40 }"
       />
     </el-tab-pane>
   </el-tabs>
