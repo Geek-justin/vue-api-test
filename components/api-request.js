@@ -214,7 +214,10 @@ const ApiRequest = (function () {
           _domain = '',
           _path = '/',
           _method = Vue.toRaw(state.method),
-          _headers = {},
+          _headers = {
+            'Accept': "*/*",
+            'Content-Type': ""
+          },
           _body = {},
           _params = {}
 
