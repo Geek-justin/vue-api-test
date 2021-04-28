@@ -18,15 +18,20 @@ const ApiTest = (function () {
           <template #default="{ node, data }">
             <span class="custom-tree-node">
               <span>{{ data.label }}</span>
-              <span class="context-menu" v-if="!data.config">
+              <span class="context-menu" v-if="data.config">
+                <a @click="removeCommon(node, data)" style="color:red"><i class="el-icon-delete"></i></a>
+              </span>
+              <span class="context-menu" v-else>
                 <el-dropdown trigger="click" size="small">
                   <span class="el-dropdown-link">
                     <i class="el-icon-more"></i>
                   </span>
                   <template #dropdown>
                     <el-dropdown-menu>
+                      <el-dropdown-item @click="editFolder(node, data)">Edit</el-dropdown-item>
                       <el-dropdown-item @click="addFolder(node, data)">Add folder</el-dropdown-item>
                       <el-dropdown-item @click="addRequest(node, data)">Add request</el-dropdown-item>
+                      <el-dropdown-item v-if="data.id != 1" @click="removeCommon(node, data)" style="color:red">Delete</el-dropdown-item>
                     </el-dropdown-menu>
                   </template>
                 </el-dropdown>
@@ -69,6 +74,18 @@ const ApiTest = (function () {
         let api = Vue.toRaw(state.data)
         ApiDB.setStorage('api', api)
       }
+      function editFolder(_node, _object) {
+        ElementPlus.ElMessageBox.prompt('Edit folder name', '', {
+          inputValue: _object.label,
+        })
+          .then(({ value }) => {
+            if (value) {
+              _object.label = value.trim()
+              syncUpdateDatabase()
+            }
+          })
+          .catch((e) => {})
+      }
       function addFolder(_node, _object) {
         if (typeof _object['config'] == 'undefined') {
           if (typeof _object['children'] == 'undefined') {
@@ -98,6 +115,66 @@ const ApiTest = (function () {
           syncUpdateDatabase()
         }
       }
+      function removeCommon(_node, _object) {
+        let msg = `Confirm remove ${_object.label} ?`
+        ElementPlus.ElMessageBox.confirm(msg, '', {})
+          .then(() => {
+            let eTarget = Vue.toRaw(_node)
+            let ids = getChildren(eTarget['data'])
+            if (ids.length > 0) {
+              closeActiveByList(ids)
+            }
+            if (typeof eTarget['parent'] != 'undefined') {
+              parent = eTarget['parent']
+              let index = -1
+              parent.data.children.forEach((item, idx) => {
+                if (item.id == eTarget['data'].id) {
+                  index = idx
+                }
+              })
+              if (index != -1) {
+                parent.data.children.splice(index, 1)
+              }
+            }
+            syncUpdateDatabase()
+          })
+          .catch((e) => {})
+      }
+      function closeActiveByList(list) {
+        if (list.length > 0) {
+          let active = Vue.toRaw(state.active)
+          list.forEach((id) => {
+            let pos = state.openedList.indexOf(id)
+            if (pos != -1) {
+              state.openedList.splice(pos, 1)
+            }
+            state.apis.splice(pos, 1)
+            if (active >= pos) {
+              active--
+            }
+          })
+          if (active < 0) {
+            active = 0
+          }
+          state.active = `${active}`
+        }
+      }
+      function getChildren(_object) {
+        let ids = []
+        if (
+          typeof _object['children'] != 'undefined' &&
+          _object['children'] instanceof Array
+        ) {
+          _object['children'].forEach((child) => {
+            let _ids = getChildren(child)
+            ids = ids.concat(_ids)
+          })
+        }
+        if (typeof _object['config'] != 'undefined') {
+          ids.push(_object.id)
+        }
+        return ids
+      }
 
       function nodeClick(_object, _node, _element) {
         let _api = Vue.toRaw(_object)
@@ -122,8 +199,8 @@ const ApiTest = (function () {
         }
       }
       function handleActiveApi(payload) {
-          state.active = `${payload}`
-          console.log(`Curr ${state.active}`)
+        state.active = `${payload}`
+        console.log(`Curr ${state.active}`)
       }
       function handleAddApi(_object, parents) {
         let _api = Vue.toRaw(_object)
@@ -145,20 +222,7 @@ const ApiTest = (function () {
       function handleRemoveApi(payload) {
         let target = state.apis[payload]
         let id = target['ref']['id']
-        let pos = state.openedList.indexOf(id)
-        if (pos != -1) {
-          state.openedList.splice(pos, 1)
-        }
-        state.apis.splice(payload, 1)
-
-        let active = (current = Vue.toRaw(state.active))
-        if (current >= payload) {
-          active--
-        }
-        if (active < 0) {
-          active = 0
-        }
-        state.active = `${active}`
+        closeActiveByList([id])
       }
       function handleUpdateName(payload) {
         let index = payload['index']
@@ -192,8 +256,10 @@ const ApiTest = (function () {
       return {
         state,
         nodeClick,
+        editFolder,
         addFolder,
         addRequest,
+        removeCommon,
         handleActiveApi,
         handleRemoveApi,
         handleUpdateName,

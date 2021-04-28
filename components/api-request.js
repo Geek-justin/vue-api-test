@@ -9,7 +9,7 @@ const ApiRequest = (function () {
     <el-input ref="inputElement" v-model="state.name" v-show="state.nameEditMode" @blur="saveName" placeholder="Enter api name" />
   </el-col>
   <el-col :span="2">
-    <el-button type="primary" @click="saveConfig">Save</el-button>
+    <el-button @click="saveConfig">Save</el-button>
   </el-col>
 </el-row>
 <el-row class="info-section">
@@ -28,7 +28,7 @@ const ApiRequest = (function () {
             </el-select>
         </template>
         <template #append>
-            <el-button type="primary" @click="sendApiRequest">Send</el-button>
+            <el-button type="primary" :loading="state.requestLoading" @click="sendApiRequest">Send</el-button>
         </template>
         </el-input>
     </div>
@@ -89,6 +89,7 @@ const ApiRequest = (function () {
         method: '',
         headers: [],
         body: [],
+        requestLoading: false,
         responseContent: '{"code":0}',
       })
 
@@ -256,15 +257,20 @@ const ApiRequest = (function () {
           data: _body,
         }
         try {
+          state.requestLoading = true
           client(options)
             .then((res) => {
               state.responseContent = JSON.stringify(res.data)
+
+              state.requestLoading = false
             })
             .catch((err) => {
               ElementPlus.ElMessage(err.message)
+              state.requestLoading = false
             })
         } catch (err) {
           console.log(err)
+          state.requestLoading = false
         }
       }
       return {

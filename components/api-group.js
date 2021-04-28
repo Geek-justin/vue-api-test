@@ -1,6 +1,6 @@
 const ApiGroup = (function () {
   let _render = `
-<el-tabs v-if="apis.length > 0" v-model="tabActive" type="card" closable @edit="handleTabsEdit" @tab-click="handleTabClick">
+<el-tabs v-if="apis.length > 0" v-model="state.ActiveTab" type="card" closable @edit="handleTabsEdit" @tab-click="handleTabClick">
   <el-tab-pane
     v-for="(item, index) in apis"
     :label="item.name"
@@ -28,32 +28,27 @@ const ApiGroup = (function () {
         type: String,
       },
     },
-    data() {
-      return {
-        tabActive: 0
-      }
-    },
-    methods: {
-
-    },
     setup(props, context) {
       const state = Vue.reactive({
-        ActiveTab: 0,
+        ActiveTab: '0',
       })
       Vue.watch(
         () => props.active,
         (_new, _old) => {
-        setTimeout(function(){
-          state.ActiveTab = _new
-        }, 100)
-      })
+          setTimeout(function () {
+            state.ActiveTab = _new
+          }, 100)
+        }
+      )
       function refreshActiveTab(tabIndex) {
         let last = props.apis.length - 1
         if (tabIndex > last) {
-          state.ActiveTab = `${last}`
-        } else {
-          state.ActiveTab = `${tabIndex}`
+          tabIndex = last
         }
+        if (tabIndex < 0) {
+          tabIndex = 0
+        }
+        state.ActiveTab = `${tabIndex}`
       }
       function handleTabClick(_instance) {
         let targetName = _instance.props.name
@@ -69,9 +64,6 @@ const ApiGroup = (function () {
           if (current >= index) {
             current--
           }
-          if (state.ActiveTab < 0) {
-            state.ActiveTab = 0
-          } 
           context.emit('removeApi', index)
           refreshActiveTab(current--)
         }

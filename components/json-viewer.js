@@ -136,6 +136,9 @@ const JsonViewer = (function () {
         :autosize="{ minRows: 40 }"
       />
     </el-tab-pane>
+    <el-tab-pane name="preview" label="Preview">
+      <div v-html="state.jsonObject"></div>
+    </el-tab-pane>
   </el-tabs>
 </div>
 `,

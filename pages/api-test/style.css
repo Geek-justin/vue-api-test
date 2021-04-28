@@ -42,6 +42,11 @@ body {
   padding-left: 13px;
   padding-right: 13px;
 }
+.el-input-group__append button.el-button {
+  color: #fff;
+  background-color: #409eff;
+  border-color: #409eff;
+}
 #wrapper .el-tabs {
   height: 100%;
 }
@@ -52,12 +57,12 @@ body {
   height: 100%;
 }
 .custom-tree-node {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 14px;
-    padding-right: 8px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  padding-right: 8px;
 }
 .custom-tree-node .context-menu {
   display: none;
