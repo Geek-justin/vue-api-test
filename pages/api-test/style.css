@@ -11,6 +11,7 @@ body {
   height: 100%;
 }
 #wrapper > .el-row > .el-col {
+  height: 100%;
   padding: 5px;
 }
 
@@ -55,6 +56,14 @@ body {
 }
 #wrapper .el-tabs > .el-tabs__content > .el-tab-pane {
   height: 100%;
+}
+.global-ctrl {
+  height: 40px;
+  line-height: 40px;
+}
+.tree-wrapper {
+  height: calc(100% - 80px);
+  overflow-y: auto;
 }
 .custom-tree-node {
   flex: 1;

@@ -1,15 +1,19 @@
 const ApiRequest = (function () {
   let _render = `
 <el-row class="title-section">
-  <el-col :span="22">
+  <el-col :span="20">
     <el-breadcrumb separator="/" v-show="!state.nameEditMode">
       <el-breadcrumb-item v-for="item in state.parents">{{ item.name }}</el-breadcrumb-item>
       <el-breadcrumb-item>{{state.name}} <el-button type="text" @click="editName" icon="el-icon-edit"></el-button></el-breadcrumb-item>
     </el-breadcrumb>
     <el-input ref="inputElement" v-model="state.name" v-show="state.nameEditMode" @blur="saveName" placeholder="Enter api name" />
   </el-col>
-  <el-col :span="2">
+  <el-col :span="4">
     <el-button @click="saveConfig">Save</el-button>
+    <el-select v-model="vars.env" style="margin-left:10px; width: 120px">
+      <el-option v-for="(v, e) in vars.map" :label="e" :value="e"></el-option>
+    </el-select>
+    <el-button @click="editVars">Edit</el-button>
   </el-col>
 </el-row>
 <el-row class="info-section">
@@ -40,17 +44,30 @@ const ApiRequest = (function () {
       :params="state.url.query"
       :headers="state.headers"
       :body="state.body"
-      @paramsUpdate="updateUrlRaw"
+      @paramsUpdate="saveVars"
     ></request-params>
   </el-col>
   <el-col :span="12">
     <json-viewer :content="state.responseContent"></json-viewer>
   </el-col>
-</el-row>`
+</el-row>
+
+
+<el-dialog :title="vars.env" v-model="vars.editMode">
+  <param-list :params="vars.params"></param-list>
+  <template #footer>
+    <span class="dialog-footer">
+      <el-button @click="vars.editMode = false">取 消</el-button>
+      <el-button type="primary" @click="saveVars">确 定</el-button>
+    </span>
+  </template>
+</el-dialog>
+`
 
   return Vue.defineComponent({
     name: 'ApiRequest',
     components: {
+      ParamList,
       RequestParams,
       JsonViewer,
     },
@@ -74,6 +91,12 @@ const ApiRequest = (function () {
     },
     setup(props, context) {
       const inputElement = Vue.ref(null)
+      const vars = Vue.reactive({
+        env: 'dev',
+        map: {},
+        editMode: false,
+        params: [{ status: true, key: 'domain', value: 'http://api.dev.com/' }],
+      })
       const state = Vue.reactive({
         parents: [],
         name: '',
@@ -205,7 +228,79 @@ const ApiRequest = (function () {
           headers: Vue.toRaw(state.headers),
           body: Vue.toRaw(state.body),
         }
+        console.dir(config)
         context.emit('updateConfig', config)
+      }
+      initDatabase()
+      function initDatabase() {
+        let _vars = ApiDB.getStorage('vars')
+        if (!_vars) {
+          _vars = {
+            dev: {
+              domain: 'http://api.dev.com/',
+            },
+            test: {
+              domain: 'http://api.test.com/',
+            },
+            prod: {
+              domain: 'http://api.prod.com/',
+            },
+          }
+          ApiDB.setStorage('vars', _vars)
+        }
+        vars['map'] = _vars
+      }
+      function syncUpdateDatabase() {
+        ApiDB.setStorage('vars', vars['map'])
+      }
+      function editVars() {
+        let map = vars['map'][vars.env] ?? {}
+        vars['params'] = []
+        for (let p in map) {
+          vars['params'].push({
+            status: true,
+            key: p,
+            value: Vue.toRaw(map[p]),
+          })
+        }
+        vars['editMode'] = true
+      }
+
+      function saveVars() {
+        if (vars['params'].length > 0) {
+          if (vars['map'][vars.env]) {
+            vars['params'].forEach((item) => {
+              if (item.status) {
+                vars['map'][vars.env][item.key] = item.value
+              }
+            })
+          }
+        }
+        vars['editMode'] = false
+        syncUpdateDatabase()
+      }
+      function replaceVarByEnv(target) {
+        if (target instanceof Array) {
+          target.forEach((v, k) => {
+            target[k] = replaceVarByEnv(v)
+          })
+        } else {
+          let r = /{{.*}}/g
+          let s = decodeURI(target)
+          let varList = r.exec(s)
+          if (varList && varList.length > 0) {
+            let dict = vars['map'][vars.env] ?? {}
+            varList.forEach((item) => {
+              var placeholder = item
+              var k = item.trim().substr(2)
+              k = k.substr(0, k.length - 2).trim()
+              var v = dict[k] ?? ''
+              s = s.replace(placeholder, v)
+            })
+            target = s
+          }
+        }
+        return target
       }
 
       function sendApiRequest() {
@@ -215,19 +310,23 @@ const ApiRequest = (function () {
           _path = '/',
           _method = Vue.toRaw(state.method),
           _headers = {
-            'Accept': "*/*",
-            'Content-Type': ""
+            Accept: '*/*',
+            'Content-Type': '',
           },
           _body = {},
           _params = {}
 
         if (state.url.host.length > 0) {
           _domain = Vue.toRaw(state.url.host).join('.')
+          _domain = replaceVarByEnv(_domain)
         }
         if (state.url.path.length > 0) {
           _path += Vue.toRaw(state.url.path).join('/')
+          _path = replaceVarByEnv(_path)
         }
-        _url = `${_protocol}//${_domain}${_path}`
+        if (_domain.trim().substr(0, 4).toLocaleLowerCase() != 'http') {
+          _url = `${_protocol}//${_domain}${_path}`
+        }
         if (state.url.query.length > 0) {
           _url += '?'
           state.url.query.forEach((item) => {
@@ -277,6 +376,9 @@ const ApiRequest = (function () {
         }
       }
       return {
+        vars,
+        editVars,
+        saveVars,
         state,
         inputElement,
         editName,

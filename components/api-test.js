@@ -7,38 +7,46 @@ const ApiTest = (function () {
     template: `
     <el-row>
       <el-col :span="4">
+        <div class="global-ctrl">
+          <input type="file" style="display:none" ref="file" @change="importFile" />
+          <el-button size="small" @click="chooseImportFile">Import</el-button>
+          <el-button size="small" @click="addFolder(false, state.data)">Add</el-button>
+          <el-button size="small" @click="closeAll">CloseAll</el-button>
+        </div>
         <el-input placeholder="输入关键字进行过滤" v-model="state.searchText"></el-input>
-        <el-tree
-          class="filter-tree"
-          :data="state.data"
-          @node-click="nodeClick"
-          default-expand-all
-          :expand-on-click-node="false"
-          ref="tree">
-          <template #default="{ node, data }">
-            <span class="custom-tree-node">
-              <span>{{ data.label }}</span>
-              <span class="context-menu" v-if="data.config">
-                <a @click="removeCommon(node, data)" style="color:red"><i class="el-icon-delete"></i></a>
+        <div class="tree-wrapper">
+          <el-tree
+            class="filter-tree"
+            :data="state.data"
+            @node-click="nodeClick"
+            :expand-on-click-node="false"
+            :filter-node-method="nodeFilter"
+            ref="tree">
+            <template #default="{ node, data }">
+              <span class="custom-tree-node">
+                <span>{{ data.label }}</span>
+                <span class="context-menu" v-if="data.config">
+                  <a @click="removeCommon(node, data)" style="color:red"><i class="el-icon-delete"></i></a>
+                </span>
+                <span class="context-menu" v-else>
+                  <el-dropdown trigger="click" size="small">
+                    <span class="el-dropdown-link">
+                      <i class="el-icon-more"></i>
+                    </span>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item @click="editFolder(node, data)">Edit</el-dropdown-item>
+                        <el-dropdown-item @click="addFolder(node, data)">Add folder</el-dropdown-item>
+                        <el-dropdown-item @click="addRequest(node, data)">Add request</el-dropdown-item>
+                        <el-dropdown-item v-if="data.id != 1" @click="removeCommon(node, data)" style="color:red">Delete</el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
+                </span>
               </span>
-              <span class="context-menu" v-else>
-                <el-dropdown trigger="click" size="small">
-                  <span class="el-dropdown-link">
-                    <i class="el-icon-more"></i>
-                  </span>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item @click="editFolder(node, data)">Edit</el-dropdown-item>
-                      <el-dropdown-item @click="addFolder(node, data)">Add folder</el-dropdown-item>
-                      <el-dropdown-item @click="addRequest(node, data)">Add request</el-dropdown-item>
-                      <el-dropdown-item v-if="data.id != 1" @click="removeCommon(node, data)" style="color:red">Delete</el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
-              </span>
-            </span>
-          </template>
-        </el-tree>
+            </template>
+          </el-tree>
+        </div>
       </el-col>
       <el-col :span="20">
         <api-group 
@@ -53,6 +61,8 @@ const ApiTest = (function () {
     </el-row>
     `,
     setup() {
+      const tree = Vue.ref(null)
+      const file = Vue.ref(null)
       const state = Vue.reactive({
         apis: [],
         active: '0',
@@ -64,8 +74,7 @@ const ApiTest = (function () {
       function initDatabase() {
         let api = ApiDB.getStorage('api')
         if (!api) {
-          console.log('初始化DB' + api)
-          api = [{ id: 1, label: 'Home' }]
+          api = []
           ApiDB.setStorage('api', api)
         }
         state.data = api
@@ -88,14 +97,20 @@ const ApiTest = (function () {
       }
       function addFolder(_node, _object) {
         if (typeof _object['config'] == 'undefined') {
-          if (typeof _object['children'] == 'undefined') {
-            _object['children'] = []
+          let _children = []
+          if (_node) {
+            if (typeof _object['children'] == 'undefined') {
+              _object['children'] = []
+            }
+            _children = _object['children']
+          } else {
+            _children = _object
           }
 
           ElementPlus.ElMessageBox.prompt('Input folder name', '', {})
             .then(({ value }) => {
               if (value) {
-                _object.children.push({ id: uuid(), label: value.trim() })
+                _children.push({ id: uuid(), label: value.trim() })
                 syncUpdateDatabase()
               }
             })
@@ -254,10 +269,90 @@ const ApiTest = (function () {
         var uuid = s.join('')
         return uuid
       }
+      Vue.watch(
+        () => state.searchText,
+        (_new, _old) => {
+          tree.value.filter(_new)
+        }
+      )
+      function nodeFilter(value, data) {
+        if (!value) return true
+        return data.label.indexOf(value) !== -1
+      }
+      function chooseImportFile() {
+        file.value.click()
+      }
+      function importFile(e) {
+        let _input = e.target
+        let file = _input.files[0]
+        _input.value = ''
+        if (file.type != 'application/json') {
+          ElementPlus.ElMessage(`只支持导入json格式`)
+          return false
+        }
+        const reader = new FileReader()
+        reader.readAsText(file)
+        reader.onload = function (e) {
+          let _target = e.target
+          let _data = JSON.parse(_target.result)
 
+          let _p = {}
+          importByJson(_data.item, _p)
+          _p.children.forEach((item) => {
+            state.data.push(item)
+          })
+          syncUpdateDatabase()
+        }
+      }
+
+      function importByJson(items, parent) {
+        if (items instanceof Array) {
+          items.forEach((item, index) => {
+            let _info = {
+              label: item.name,
+              id: uuid(),
+            }
+            if (typeof item.item != 'undefined') {
+              importByJson(item.item, _info)
+            } else if (typeof item.request != 'undefined') {
+              let r = item.request
+              let url = r.url ?? null
+              if (url) {
+                let _url = url.raw ?? ''
+
+                let body = []
+                if (r.body) {
+                  let k = r.body.type
+                  body = r.body[k]
+                }
+                _info['config'] = {
+                  url: _url,
+                  headers: r.header ?? [],
+                  method: r.method ?? 'GET',
+                  body: body,
+                }
+              } else {
+                _info['config'] = { url: '' }
+              }
+            }
+            if (typeof parent['children'] == 'undefined') {
+              parent['children'] = []
+            }
+            parent['children'].push(_info)
+          })
+        }
+      }
+      function closeAll() {
+        ElementPlus.ElMessageBox.confirm('Close all ?', '', {}).then(() => {
+          state.apis = []
+        })
+      }
       return {
+        tree,
+        file,
         state,
         nodeClick,
+        nodeFilter,
         editFolder,
         addFolder,
         addRequest,
@@ -266,6 +361,9 @@ const ApiTest = (function () {
         handleRemoveApi,
         handleUpdateName,
         handleSaveConfig,
+        chooseImportFile,
+        importFile,
+        closeAll,
       }
     },
   }
