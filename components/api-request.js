@@ -44,7 +44,7 @@ const ApiRequest = (function () {
       :params="state.url.query"
       :headers="state.headers"
       :body="state.body"
-      @paramsUpdate="saveVars"
+      @paramsUpdate="updateUrlRaw"
     ></request-params>
   </el-col>
   <el-col :span="12">
@@ -54,7 +54,7 @@ const ApiRequest = (function () {
 
 
 <el-dialog :title="vars.env" v-model="vars.editMode">
-  <param-list :params="vars.params"></param-list>
+  <param-list key="just-for-vars" :params="vars.params"></param-list>
   <template #footer>
     <span class="dialog-footer">
       <el-button @click="vars.editMode = false">取 消</el-button>
@@ -194,8 +194,11 @@ const ApiRequest = (function () {
         if (state.rawEditMode) {
           return false
         }
-        let _url = `${state.url.protocol}//`
-        _url += state.url.host.join('.')
+        let _url = ''
+        if (state.url.host.length > 0) {
+          _url = Vue.toRaw(state.url.host).join('.')
+          _url = decodeURI(_url)
+        }
         if (state.url.path.length > 0) {
           _url += '/' + state.url.path.join('/')
         }
@@ -234,7 +237,7 @@ const ApiRequest = (function () {
       initDatabase()
       function initDatabase() {
         let _vars = ApiDB.getStorage('vars')
-        if (!_vars) {
+        if (!_vars || _vars['dev'].length == 0) {
           _vars = {
             dev: {
               domain: 'http://api.dev.com/',
@@ -269,6 +272,7 @@ const ApiRequest = (function () {
       function saveVars() {
         if (vars['params'].length > 0) {
           if (vars['map'][vars.env]) {
+            vars['map'][vars.env] = {}
             vars['params'].forEach((item) => {
               if (item.status) {
                 vars['map'][vars.env][item.key] = item.value
@@ -279,11 +283,25 @@ const ApiRequest = (function () {
         vars['editMode'] = false
         syncUpdateDatabase()
       }
+      function updateVarsByResponse(res) {
+        if (res) {
+          if (res['code'] == 0 && typeof res['data'] != 'undefined') {
+            if (vars['map'][vars.env]) {
+              for (let p in res['data']) {
+                if (typeof vars['map'][vars.env][p] != 'undefined') {
+                  vars['map'][vars.env][p] = res['data'][p]
+                }
+              }
+            }
+          }
+        }
+      }
+
       function replaceVarByEnv(target) {
-        if (target instanceof Array) {
-          target.forEach((v, k) => {
-            target[k] = replaceVarByEnv(v)
-          })
+        if (typeof target == 'object') {
+          for (let p in target) {
+            target[p] = replaceVarByEnv(target[p])
+          }
         } else {
           let r = /{{.*}}/g
           let s = decodeURI(target)
@@ -326,6 +344,8 @@ const ApiRequest = (function () {
         }
         if (_domain.trim().substr(0, 4).toLocaleLowerCase() != 'http') {
           _url = `${_protocol}//${_domain}${_path}`
+        } else {
+          _url = `${_domain}${_path}`
         }
         if (state.url.query.length > 0) {
           _url += '?'
@@ -336,17 +356,23 @@ const ApiRequest = (function () {
           })
           _url = _url.substr(0, _url.length - 1)
         }
+        if (state.method.toLocaleLowerCase() == 'post') {
+          _headers['Content-Type'] = 'multipart/form-data'
+        }
         if (state.headers.length > 0) {
           state.headers.forEach((item) => {
             if (item['status'] && item['key'] != '') {
               _headers[item['key']] = item['value']
             }
           })
+          _headers = replaceVarByEnv(_headers)
         }
+
         if (state.body.length > 0) {
+          _body = new FormData()
           state.body.forEach((item) => {
             if (item['status'] && item['key'] != '') {
-              _body[item['key']] = item['value']
+              _body.append(item['key'], item['value'])
             }
           })
         }
@@ -363,8 +389,8 @@ const ApiRequest = (function () {
           client(options)
             .then((res) => {
               state.responseContent = JSON.stringify(res.data)
-
               state.requestLoading = false
+              updateVarsByResponse(res.data)
             })
             .catch((err) => {
               ElementPlus.ElMessage(err.message)

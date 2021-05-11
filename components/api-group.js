@@ -15,7 +15,7 @@ const ApiGroup = (function () {
   return Vue.defineComponent({
     name: 'ApiGroup',
     components: {
-      ApiRequest,
+      ApiRequest
     },
     template: _render,
     emits: ['activeApi', 'removeApi', 'updateName', 'saveConfig'],

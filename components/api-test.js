@@ -16,6 +16,7 @@ const ApiTest = (function () {
         <el-input placeholder="输入关键字进行过滤" v-model="state.searchText"></el-input>
         <div class="tree-wrapper">
           <el-tree
+            default-expand-all
             class="filter-tree"
             :data="state.data"
             @node-click="nodeClick"
