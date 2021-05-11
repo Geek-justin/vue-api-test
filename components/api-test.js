@@ -346,6 +346,7 @@ const ApiTest = (function () {
       function closeAll() {
         ElementPlus.ElMessageBox.confirm('Close all ?', '', {}).then(() => {
           state.apis = []
+          state.openedList = []
         })
       }
       return {
